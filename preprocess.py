@@ -28,7 +28,7 @@ def make_sentence_l2(data):
     sent = data['Chief complaint']
     sent = sent + ". " + ageband(data['Age'])
     sent = sent + ". " + data['Sex']
-    sent = setn + ". " + Obesity(data[Weight], data[Height])
+    sent = sent + ". " + Obesity(data[Weight], data[Height])
 
 def make_sentence_diag(data):
     cols = ['Sex', 'Onset', 'Location',
