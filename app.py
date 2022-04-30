@@ -22,7 +22,7 @@ def predict_level2():
     if preprocess.check_data(data) == 400:
         return make_response(("Bad Request", 400))
 
-    sentence = make_sentence_l2(data)
+    sentence = preprocess.make_sentence_l2(data)
     # level2 = l2_model.predict(sentence)
     level2 = "급성 복통"
     response = {"level2" : level2}
