@@ -70,4 +70,4 @@ def predict(sentence):
 
     top3 = torch.topk(out, k = 3, dim = 1, sorted = True).indices[0].numpy()
     diseaseList = le.inverse_transform(top3)
-    return diseaseList
+    return diseaseList.tolist()
