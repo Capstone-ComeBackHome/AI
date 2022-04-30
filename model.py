@@ -47,7 +47,7 @@ class BERTClassifier(nn.Module):
 def load_diag_model():
     kobert_model, vocab = get_pytorch_kobert_model()
 
-    kobert_model = torch.load('kobert1.pth',  map_location=torch.device('cpu'))
+    kobert_model = torch.load('../saved_model/kobert1.pth',  map_location=torch.device('cpu'))
     kobert_model.eval()
 
     tokenizer = get_tokenizer()
