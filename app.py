@@ -19,12 +19,11 @@ def index():
 @app.route('/predict/level2', methods = ['POST'])
 def predict_level2():
     data = request.get_json()
-    sent = data['Chief complaint']
-    sent = sent + ". " + str(data['Age'])
-    sent = sent + ". " + data['Sex']
-    sent = sent + ". " + str(data['Height']) #실제로는 Obestiy 계산하여 처리
-    sent = sent + ". " + str(data['Weight']) #실제로는 Obestiy 계산하여 처리
-    # level2 = predict_level2(sent)
+    if preprocess.check_data(data) == 400:
+        return make_response(("Bad Request", 400))
+
+    sentence = make_sentence_l2(data)
+    # level2 = l2_model.predict(sentence)
     level2 = "급성 복통"
     response = {"level2" : level2}
     return make_response(jsonify(response), 200)
@@ -35,10 +34,10 @@ def predict_level2():
 @app.route('/predict/diagnosis', methods = ['POST'])
 def predict_diagnosis():
     data = request.get_json()
-    if preprocess.checkData(data) == 400:
+    if preprocess.check_data(data) == 400:
         return make_response(("Bad Request", 400))
 
-    sentence = preprocess.makeSentence(data)
+    sentence = preprocess.make_sentence_diag(data)
     disaseList = model.predict(sentence)
     response = {"diseasesList" : disaseList}
     return make_response(jsonify(response), 200)
@@ -46,10 +45,10 @@ def predict_diagnosis():
 
 
 
+
 def process(sentece):
     #processing
     return "질문에 대한 답변입니다.";
-
 
 @app.route('/counseling', methods = ['POST'])
 def counseling():
@@ -63,4 +62,3 @@ def counseling():
 if __name__ == '__main__':
     # app.run()
     app.run(debug = True)
-    model.init()

@@ -10,11 +10,8 @@ from kobert import get_tokenizer
 import gluonnlp as nlp
 
 
-global le
-global tokenizer
-global kobert_model
-global vocab
-global transform
+le = LabelEncoder()
+le.classes_ = np.load('classes.npy', allow_pickle = True)
 
 class BERTClassifier(nn.Module):
     def __init__(self,
@@ -47,27 +44,30 @@ class BERTClassifier(nn.Module):
             out = pooler
         return self.classifier(out)
 
-
-
-def init():
-    le = LabelEncoder()
-    le.classes_ = np.load('classes.npy', allow_pickle = True)
-    tokenizer = get_tokenizer()
+def load_diag_model():
     kobert_model, vocab = get_pytorch_kobert_model()
-    tok = nlp.data.BERTSPTokenizer(tokenizer, vocab, lower=False)
-    transform = nlp.data.BERTSentenceTransform(tok, max_seq_length=128, pad=True, pair=False)
+
     kobert_model = torch.load('kobert1.pth',  map_location=torch.device('cpu'))
     kobert_model.eval()
 
+    tokenizer = get_tokenizer()
+    tok = nlp.data.BERTSPTokenizer(tokenizer, vocab, lower=False)
+    transform = nlp.data.BERTSentenceTransform(tok, max_seq_length=128, pad=True, pair=False)
+    return kobert_model, transform
+
+
+model, transform = load_diag_model()
+
 def predict(sentence):
-    input = transform([sentence])
     with torch.no_grad():
-        dataloader_ = torch.utils.data.DataLoader(input, batch_size=1)
-        token_ids, valid_length, segment_ids = dataloader_
+        input = transform([sentence])
+        dataloader = torch.utils.data.DataLoader(input, batch_size=1)
+        token_ids, valid_length, segment_ids = dataloader
         token_ids = token_ids.long()
         valid_length = valid_length
         segment_ids = segment_ids.long()
-        out = kobert_model(token_ids, valid_length, segment_ids)
+        out = model(token_ids, valid_length, segment_ids)
+
     top3 = torch.topk(out, k = 3, dim = 1, sorted = True).indices[0].numpy()
     diseaseList = le.inverse_transform(top3)
     return disaseList
