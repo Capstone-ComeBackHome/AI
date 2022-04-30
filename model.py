@@ -44,17 +44,17 @@ class BERTClassifier(nn.Module):
             out = pooler
         return self.classifier(out)
 
+
 def load_diag_model():
     kobert_model, vocab = get_pytorch_kobert_model()
-
-    kobert_model = torch.load('../saved_model/kobert1.pth',  map_location=torch.device('cpu'))
-    kobert_model.eval()
+    model = BERTClassifier(kobert_model)
+    model.load_state_dict(torch.load('../saved_model/kobert1_state_dict.pth',  map_location=torch.device('cpu')))
+    model.eval()
 
     tokenizer = get_tokenizer()
     tok = nlp.data.BERTSPTokenizer(tokenizer, vocab, lower=False)
     transform = nlp.data.BERTSentenceTransform(tok, max_seq_length=128, pad=True, pair=False)
-    return kobert_model, transform
-
+    return model, transform
 
 model, transform = load_diag_model()
 
