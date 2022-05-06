@@ -37,12 +37,10 @@ def predict_diagnosis():
     if preprocess.check_data(data) == 400:
         return make_response(("Bad Request", 400))
 
-    sentence = preprocess.make_sentence_diag(data)
-    disaseList = model.predict(sentence)
+    sentence, is_man = preprocess.make_sentence_diag(data)
+    disaseList = model.predict(sentence, is_man)
     response = {"diseasesList" : disaseList}
     return make_response(jsonify(response), 200)
-
-
 
 
 

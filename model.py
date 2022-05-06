@@ -12,6 +12,7 @@ import gluonnlp as nlp
 
 le = LabelEncoder()
 le.classes_ = np.load('classes.npy', allow_pickle = True)
+filter = torch.load('filter.pt')
 
 class BERTClassifier(nn.Module):
     def __init__(self,
@@ -58,7 +59,7 @@ def load_diag_model():
 
 model, transform = load_diag_model()
 
-def predict(sentence):
+def predict(sentence, is_man):
     with torch.no_grad():
         input = transform([sentence])
         dataloader = torch.utils.data.DataLoader(input, batch_size=1)
@@ -67,7 +68,11 @@ def predict(sentence):
         valid_length = valid_length
         segment_ids = segment_ids.long()
         out = model(token_ids, valid_length, segment_ids)
-
+    if is_man:
+        out = torch.nn.functional.softmax(out, dim = 1)
+        out = torch.mul(out, filter)
     top3 = torch.topk(out, k = 3, dim = 1, sorted = True).indices[0].numpy()
     diseaseList = le.inverse_transform(top3)
     return diseaseList.tolist()
+
+predict(sentence, True)

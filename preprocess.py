@@ -43,4 +43,9 @@ def make_sentence_diag(data):
         else:
             sent = sent + ". "
     sent = sent + obesity(data['Weight'], data['Height'])
-    return sent
+
+    is_man = False
+    if data['Sex'] == '남성':
+        is_man = True
+
+    return sent, is_man
