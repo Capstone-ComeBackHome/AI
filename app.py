@@ -19,8 +19,8 @@ def index():
 @app.route('/predict/level2', methods = ['POST'])
 def predict_level2():
     data = request.get_json()
-    result = level2_model.handle(data)
-    response = {"QuestionsDict" : questions[data['Sex']][result]}
+    pred = level2_model.handle(data)
+    response = {"QuestionsDict" : questions.question_dict[data['Sex']][pred]}
     return make_response(jsonify(response), 200)
 
 
