@@ -1,7 +1,7 @@
 
 
 def check_data(data):
-    required = ['Chief complaint', 'Age', 'Sex', 'Height', 'Weight']
+    required = ['Chief complaint', 'Onset','Age', 'Sex', 'Height', 'Weight']
     for c in required:
         if c not in data:
             return 400
@@ -44,8 +44,4 @@ def make_sentence_diag(data):
             sent = sent + ". "
     sent = sent + obesity(data['Weight'], data['Height'])
 
-    is_man = False
-    if data['Sex'] == '남성':
-        is_man = True
-
-    return sent, is_man
+    return sent

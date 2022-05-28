@@ -4,12 +4,12 @@ import json
 import os
 import torch
 
-
-import preprocess
-import model
+from model import DiagnosisModelHandler, Level2ModelHandler
+import questions
 
 app = Flask(__name__)
-
+diag_model = DiagnosisModelHandler()
+level2_model = Level2ModelHandler()
 
 @app.route('/')
 def index():
@@ -19,41 +19,17 @@ def index():
 @app.route('/predict/level2', methods = ['POST'])
 def predict_level2():
     data = request.get_json()
-    if preprocess.check_data(data) == 400:
-        return make_response(("Bad Request", 400))
-
-    sentence = preprocess.make_sentence_l2(data)
-    # level2 = l2_model.predict(sentence)
-    level2 = "급성 복통"
-    response = {"level2" : level2}
+    result = level2_model.handle(data)
+    response = {"QuestionsDict" : questions[data['Sex']][result]}
     return make_response(jsonify(response), 200)
-
-
 
 
 @app.route('/predict/diagnosis', methods = ['POST'])
 def predict_diagnosis():
     data = request.get_json()
-    if preprocess.check_data(data) == 400:
-        return make_response(("Bad Request", 400))
-
-    sentence, is_man = preprocess.make_sentence_diag(data)
-    disaseList = model.predict(sentence, is_man)
-    response = {"diseasesList" : disaseList}
-    return make_response(jsonify(response), 200)
-
-
-
-def process(sentece):
-    #processing
-    return "질문에 대한 답변입니다.";
-
-@app.route('/counseling', methods = ['POST'])
-def counseling():
-    # sent -> bert -> gpt -> result
-    data = request.get_json()
-    answer = process(data['question'])
-    response = {"answer" : answer}
+    probList, disaseList = diag_model.handle(data)
+    response = {"diseasesList" : disaseList,
+                "probList" : probList}
     return make_response(jsonify(response), 200)
 
 
