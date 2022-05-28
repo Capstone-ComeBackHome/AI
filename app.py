@@ -20,8 +20,7 @@ def index():
 def predict_level2():
     data = request.get_json()
     pred = level2_model.handle(data)
-    response = {"predict" : pred,
-                "QuestionsDict" : questions.question_dict[data['Sex']][pred]}
+    response = questions.questions_dict[data['Sex']][pred]
     return make_response(jsonify(response), 200)
 
 
