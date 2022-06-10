@@ -20,6 +20,8 @@ from kobert import get_pytorch_kobert_model
 from kobert import get_tokenizer
 import gluonnlp as nlp
 
+from konlpy.tag import Okt
+
 from joblib import dump, load
 import pickle
 
@@ -41,7 +43,7 @@ class BERTClassifier(nn.Module):
 
         if dr_rate:
             self.dropout = nn.Dropout(p=dr_rate)
-    
+
     def gen_attention_mask(self, token_ids, valid_length):
         attention_mask = torch.zeros_like(token_ids)
         for i, v in enumerate(valid_length):
@@ -50,7 +52,7 @@ class BERTClassifier(nn.Module):
 
     def forward(self, token_ids, valid_length, segment_ids):
         attention_mask = self.gen_attention_mask(token_ids, valid_length)
-        
+
         _, pooler = self.bert(input_ids = token_ids, token_type_ids = segment_ids.long(), attention_mask = attention_mask.float().to(token_ids.device))
         if self.dr_rate:
             out = self.dropout(pooler)
@@ -72,7 +74,7 @@ class DiagnosisModelHandler():
         self.filter_male = None
         self.filter_female = None
         self.initialize()
-        
+
     def initialize(self):
         #label encoder
         self.le.classes_ = np.load('classes.npy', allow_pickle = True)
@@ -97,7 +99,7 @@ class DiagnosisModelHandler():
             diagnosis_female_only = pickle.load(f)
         self.filter_male = torch.FloatTensor([0 if c in diagnosis_female_only else 1 for c in self.le.classes_ ])
         self.filter_female = torch.FloatTensor([0 if c in diagnosis_male_only else 1 for c in self.le.classes_ ])
-    
+
     def preprocess(self, data):
         if preprocessor.check_data(data) == 400:
             return 400
@@ -114,7 +116,7 @@ class DiagnosisModelHandler():
             segment_ids = segment_ids.long()
             model_output = self.model(token_ids, valid_length, segment_ids)
         return model_output
-        
+
 
     def postprocess(self, sex, inference_output):
         inference_output = nn.functional.softmax(inference_output, dim = 1)
@@ -129,7 +131,7 @@ class DiagnosisModelHandler():
 
     def handle(self, data):
         model_input = self.preprocess(data)
-        if model_input == 400 : 
+        if model_input == 400 :
             raise Exception("Bad Request")
         model_output = self.inference(model_input)
         return self.postprocess(data['Sex'], model_output)
@@ -163,11 +165,11 @@ class DNN(nn.Module):
         self.l1 = nn.Linear(in_features, 512)
         self.l2 = nn.Linear(512, 64)
         self.l3 = nn.Linear(64, out_features)
-        self.dropout = nn.Dropout(p = 0.5)
+        self.dropout = nn.Dropout(p = 0.2)
         torch.nn.init.xavier_normal_(self.l1.weight)
         torch.nn.init.xavier_normal_(self.l2.weight)
         torch.nn.init.xavier_normal_(self.l3.weight)
-     
+
     def forward(self, x):
         x = F.relu(self.l1(x))
         x = self.dropout(x)
@@ -181,13 +183,15 @@ class Level2ModelHandler():
         self.initialized = False
         self.le = LabelEncoder()
         self.target = 0
+        self.stopwords = ['이', '가', '을', '를', '요', '너무', '진짜', '부터', '나', '저', '제', '랑', '에', '할', '해', '해요', '했', '했어요', '돼요', '됐어요', '되어']
+        self.okt = Okt()
         self.complaint_vectorizer = None
         self.onset_vectorizer = None
         self.model = None
         self.filter_male = None
         self.filter_female = None
         self.initialize()
-        
+
     def initialize(self):
         #label encoder
         self.le.classes_ = np.load('level2_classes.npy', allow_pickle = True)
@@ -215,9 +219,18 @@ class Level2ModelHandler():
         self.complaint_vectorizer = load('complaint_vectorizer.pkl')
         self.onset_vectorizer = load('onset_vectorizer.pkl')
 
+    def remove_stopwords(self, text):
+        clean_words = []
+        for word in self.okt.morphs(text):
+            if word not in self.stopwords:
+                clean_words.append(word)
+        return ' '.join(clean_words)
+
     def preprocess(self, data):
         if preprocessor.check_data(data) == 400:
             raise Exception("Bad Request")
+        data['Chief complaint'] = self.remove_stopwords(data['Chief complaint'])
+        data['Onset'] = self.remove_stopwords(data['Onset'])
         complaint_tfidf =  self.complaint_vectorizer.transform([data['Chief complaint']]).toarray()[0].tolist()
         onset_tfidf =  self.onset_vectorizer.transform([data['Onset']]).toarray()[0].tolist()
         return torch.FloatTensor([[0 if data['Sex'] == "남성" else 1, data['Age']] +  complaint_tfidf + onset_tfidf])
