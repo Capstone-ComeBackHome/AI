@@ -51,6 +51,10 @@ Back Translation Augmentation
 * 학습
   * 데이터수가 충분하지 않음을 고려헤 전이학습 방법을 사용
   * 다양한 BERT모델로 실험 후 가장 좋은 성능의 KoBERT를 채택
+  
+## 5. 모델 성능 비교
+![image](https://user-images.githubusercontent.com/59015764/226801867-911cbcab-e5db-4310-b75e-eed0f68b31c5.png)
+
 
 ## 5. 배포
 * AWS EC2와 Flask를 이용하여 배포 
